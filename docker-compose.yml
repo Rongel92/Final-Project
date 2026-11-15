@@ -1,0 +1,68 @@
+# DEMO — the whole app with mock data, started with one command. No SSO.
+#
+#   docker compose up -d --build   # first time (builds the image), then open http://localhost:8080
+#   docker compose up -d           # later starts
+#   docker compose down            # stop
+#   docker compose down -v         # stop and delete the demo database
+#
+# Every start reloads the mock data (2 admins, 35 employees, 7 resales at every
+# stage, dated relative to today), so each presentation begins from the same
+# state. Set DEMO_RESET_ON_START to "false" to keep changes between restarts.
+#
+# Sign in by picking any user on the sign-in page. Emails are only written to the
+# log: docker logs laptop-resale-demo
+name: laptop-resale-demo
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: laptop-resale-demo-db
+    environment:
+      POSTGRES_USER: resale
+      POSTGRES_PASSWORD: resale
+      POSTGRES_DB: laptop_resale
+    volumes:
+      - demo-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resale -d laptop_resale"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  app:
+    build: .
+    image: laptop-resale:demo
+    container_name: laptop-resale-demo
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://resale:resale@db:5432/laptop_resale?schema=public
+      SESSION_SECRET: demo-only-session-secret-not-for-production
+      # Plain http://localhost: the image otherwise defaults to HTTPS-only cookies.
+      COOKIE_SECURE: "false"
+      TRUST_PROXY: "false"
+      APP_URL: http://localhost:8080
+      CLIENT_ORIGIN: http://localhost:8080
+      EMAIL_TRANSPORT: log
+      # Mock dates use round local hours (e.g. draws at 12:00) and the signed PDF
+      # prints server time; without this the container would use UTC.
+      TZ: Asia/Jerusalem
+      DEMO_RESET_ON_START: "true"
+    # Same steps as docker-entrypoint.sh, plus loading the mock data before the
+    # server starts. ($$ stops Compose from expanding the variable itself.)
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -e
+        node_modules/.bin/prisma migrate deploy
+        if [ "$$DEMO_RESET_ON_START" = "false" ]; then SEED_ARGS=--if-empty; fi
+        NODE_ENV=development node dist/prisma/seed.js $$SEED_ARGS
+        exec node dist/src/index.js
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  demo-pgdata:

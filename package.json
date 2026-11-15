@@ -1,0 +1,12 @@
+{
+  "name": "laptop-resale",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Internal web application for managing employee resales of refurbished company laptops.",
+  "scripts": {
+    "setup": "npm install --prefix server && npm install --prefix client && npm run setup --prefix server",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "build": "npm run build --prefix server && npm run build --prefix client"
+  }
+}

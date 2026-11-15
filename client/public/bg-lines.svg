@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <clipPath id="frame">
+      <rect x="0" y="0" width="1600" height="900" />
+    </clipPath>
+  </defs>
+  <!-- Subtle low-poly mesh: indigo + grey facets, heavy at the bottom and corners, clear in the centre. -->
+  <g clip-path="url(#frame)" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.8">
+    <!-- Bottom strip -->
+    <polygon points="0,900 200,900 0,700" fill="#3A3EA8" fill-opacity="0.12" />
+    <polygon points="200,900 210,735 0,700" fill="#5155C4" fill-opacity="0.10" />
+    <polygon points="200,900 400,900 210,735" fill="#94A3B8" fill-opacity="0.095" />
+    <polygon points="400,900 395,690 210,735" fill="#5155C4" fill-opacity="0.075" />
+    <polygon points="400,900 600,900 395,690" fill="#5155C4" fill-opacity="0.07" />
+    <polygon points="600,900 605,740 395,690" fill="#94A3B8" fill-opacity="0.055" />
+    <polygon points="600,900 800,900 605,740" fill="#94A3B8" fill-opacity="0.045" />
+    <polygon points="800,900 800,710 605,740" fill="#5155C4" fill-opacity="0.035" />
+    <polygon points="800,900 1000,900 800,710" fill="#5155C4" fill-opacity="0.045" />
+    <polygon points="1000,900 1000,735 800,710" fill="#94A3B8" fill-opacity="0.035" />
+    <polygon points="1000,900 1200,900 1000,735" fill="#94A3B8" fill-opacity="0.07" />
+    <polygon points="1200,900 1205,690 1000,735" fill="#5155C4" fill-opacity="0.055" />
+    <polygon points="1200,900 1400,900 1205,690" fill="#5155C4" fill-opacity="0.095" />
+    <polygon points="1400,900 1390,730 1205,690" fill="#94A3B8" fill-opacity="0.075" />
+    <polygon points="1400,900 1600,900 1390,730" fill="#3A3EA8" fill-opacity="0.11" />
+    <polygon points="1600,900 1600,700 1390,730" fill="#5155C4" fill-opacity="0.09" />
+    <!-- Upper strip (fainter) -->
+    <polygon points="0,700 210,735 0,470" fill="#94A3B8" fill-opacity="0.066" />
+    <polygon points="210,735 220,530 0,470" fill="#5155C4" fill-opacity="0.05" />
+    <polygon points="210,735 395,690 220,530" fill="#5155C4" fill-opacity="0.052" />
+    <polygon points="395,690 410,560 220,530" fill="#94A3B8" fill-opacity="0.04" />
+    <polygon points="395,690 605,740 410,560" fill="#94A3B8" fill-opacity="0.0385" />
+    <polygon points="605,740 610,610 410,560" fill="#5155C4" fill-opacity="0.03" />
+    <polygon points="605,740 800,710 610,610" fill="#5155C4" fill-opacity="0.0247" />
+    <polygon points="800,710 800,600 610,610" fill="#94A3B8" fill-opacity="0.02" />
+    <polygon points="800,710 1000,735 800,600" fill="#94A3B8" fill-opacity="0.0247" />
+    <polygon points="1000,735 995,610 800,600" fill="#5155C4" fill-opacity="0.02" />
+    <polygon points="1000,735 1205,690 995,610" fill="#5155C4" fill-opacity="0.0385" />
+    <polygon points="1205,690 1200,560 995,610" fill="#94A3B8" fill-opacity="0.03" />
+    <polygon points="1205,690 1390,730 1200,560" fill="#94A3B8" fill-opacity="0.052" />
+    <polygon points="1390,730 1385,525 1200,560" fill="#5155C4" fill-opacity="0.04" />
+    <polygon points="1390,730 1600,700 1385,525" fill="#5155C4" fill-opacity="0.0605" />
+    <polygon points="1600,700 1600,475 1385,525" fill="#94A3B8" fill-opacity="0.048" />
+    <!-- Top-left touch -->
+    <polygon points="0,0 200,0 0,150" fill="#5155C4" fill-opacity="0.05" />
+    <polygon points="200,0 210,140 0,150" fill="#94A3B8" fill-opacity="0.04" />
+    <polygon points="200,0 400,0 210,140" fill="#94A3B8" fill-opacity="0.035" />
+    <polygon points="400,0 400,160 210,140" fill="#5155C4" fill-opacity="0.03" />
+    <!-- Top-right touch -->
+    <polygon points="1200,0 1400,0 1200,150" fill="#94A3B8" fill-opacity="0.035" />
+    <polygon points="1400,0 1400,140 1200,150" fill="#5155C4" fill-opacity="0.04" />
+    <polygon points="1400,0 1600,0 1400,140" fill="#5155C4" fill-opacity="0.05" />
+    <polygon points="1600,0 1600,150 1400,140" fill="#94A3B8" fill-opacity="0.04" />
+  </g>
+  <!-- Faint indigo node dots for a light "network" accent -->
+  <g fill="#5155C4" fill-opacity="0.16">
+    <circle cx="395" cy="690" r="2.4" />
+    <circle cx="1205" cy="690" r="2.4" />
+    <circle cx="610" cy="610" r="2.2" />
+    <circle cx="995" cy="610" r="2.2" />
+    <circle cx="800" cy="710" r="2.2" />
+    <circle cx="1385" cy="525" r="2.2" />
+    <circle cx="220" cy="530" r="2.2" />
+    <circle cx="210" cy="140" r="2" />
+    <circle cx="1400" cy="140" r="2" />
+  </g>
+</svg>

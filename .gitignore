@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+client/dist/
+server/dist/
+*.tsbuildinfo
+
+# Logs
+*.log
+*.err.log
+
+# Local database (contains user data; recreated via prisma migrate + seed)
+*.db
+*.db-journal
+server/prisma/*.db
+server/prisma/*.db-journal
+
+# Uploaded files
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Bundles / archives
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Env overrides (base server/.env is kept intentionally; it holds no secrets)
+.env.local
+.env.*.local
+
+# Deploy-time secrets, one per environment. Templates (deploy/env.example) are tracked.
+deploy/*.env
+
+# Tester hand-off package (local artifact; not part of the prod repo)
+dist-tester/

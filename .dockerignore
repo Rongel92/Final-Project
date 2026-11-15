@@ -1,0 +1,17 @@
+# Secrets are injected at runtime via env_file, never baked in.
+**/node_modules
+**/dist
+client/.vite
+server/prisma/*.db
+server/prisma/*.db-journal
+server/uploads/**
+!server/uploads/.gitkeep
+server/.env
+deploy/
+**/*.log
+**/*.err.log
+.git
+.gitignore
+run.zip
+*.pptx
+branding-preview

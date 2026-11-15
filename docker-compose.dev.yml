@@ -1,0 +1,23 @@
+# LOCAL DEVELOPMENT — PostgreSQL only. The app itself runs with `npm run dev`
+# (server + client) and connects via DATABASE_URL in server/.env.
+#
+#   docker compose -f docker-compose.dev.yml up -d     # start the database
+#   docker compose -f docker-compose.dev.yml down      # stop it (data kept)
+#   docker compose -f docker-compose.dev.yml down -v   # stop and wipe all data
+#
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: laptop-resale-db
+    environment:
+      POSTGRES_USER: resale
+      POSTGRES_PASSWORD: resale
+      POSTGRES_DB: laptop_resale
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - resale-pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  resale-pgdata:

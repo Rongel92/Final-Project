@@ -1,0 +1,384 @@
+// Prisma schema for the Laptop Resale system.
+// Database: PostgreSQL. Status/type fields are stored as Strings (the allowed
+// values are documented next to each field and enforced in the application
+// layer, see server/src/constants.ts).
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  fullName       String
+  email          String   @unique
+  department     String?
+  site           String?
+  country        String?
+  managerName    String?
+  role           String   @default("EMPLOYEE") // EMPLOYEE | ADMIN
+  isActive       Boolean  @default(true)
+  manualEligibility String? // null = automatic | "ELIGIBLE" | "INELIGIBLE"
+  eligibilityNote   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  registrations        Registration[]
+  notifications        Notification[]
+  participation        ParticipationHistory[]
+  handovers            HandoverRecord[]        @relation("HandoverEmployee")
+  administeredHandover HandoverRecord[]        @relation("HandoverAdmin")
+  createdResales       Resale[]                @relation("ResaleCreator")
+  auditLogs            AuditLog[]
+  assignedUnits        LaptopUnit[]
+
+  @@index([role])
+  @@index([department])
+}
+
+model Resale {
+  id                  String    @id @default(cuid())
+  title               String
+  description         String?
+  instructions        String?
+  status              String    @default("DRAFT")
+  // DRAFT | SCHEDULED | OPEN | CLOSED | SELECTING | RESULTS_PENDING |
+  // RESULTS_PUBLISHED | PICKUP | COMPLETED | CANCELLED | ARCHIVED
+  site                String?
+  eligibleDepartments String? // JSON array string
+  eligibleGroups      String? // JSON array string
+  registrationOpenAt  DateTime
+  registrationCloseAt DateTime
+  resaleAt            DateTime?
+  pickupStartAt       DateTime?
+  pickupEndAt         DateTime?
+  cooldownMonths      Int       @default(36)
+  eligibilityMode     String    @default("PARTICIPATION") // PARTICIPATION | PURCHASE
+  maxRegistrations    Int       @default(1)
+  allowCancellation   Boolean   @default(true)
+  autoPublishResults  Boolean   @default(false)
+  openOnPublish       Boolean   @default(false)
+  termsVersion        String    @default("1.0")
+  createdBy           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  publishedAt         DateTime?
+  closedAt            DateTime?
+
+  creator       User?                @relation("ResaleCreator", fields: [createdBy], references: [id])
+  models        ResaleLaptopModel[]
+  registrations Registration[]
+  results       ResaleResult[]
+  forms         UploadedForm[]
+  notifications Notification[]
+  handovers     HandoverRecord[]
+  participation ParticipationHistory[]
+  assignedUnits LaptopUnit[]
+
+  @@index([status])
+}
+
+model LaptopModel {
+  id               String   @id @default(cuid())
+  manufacturer     String
+  modelName        String
+  processor        String?
+  memory           String?
+  storage          String?
+  screenSize       String?
+  operatingSystem  String?
+  condition        String   @default("Good")
+  batteryCondition String?
+  accessories      String?
+  description      String?
+  imagePath        String? // public URL of the image (served from the DB by id)
+  imageData        Bytes? // image contents, stored in the DB (no shared disk needed)
+  imageMimeType    String?
+  price            Float    @default(0)
+  currency         String   @default("USD")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  resaleLinks ResaleLaptopModel[]
+  units        LaptopUnit[]
+  results      ResaleResult[]
+  handovers    HandoverRecord[]
+  registrationChoices RegistrationModelChoice[]
+}
+
+model ResaleLaptopModel {
+  id             String   @id @default(cuid())
+  resaleId       String
+  laptopModelId  String
+  quantity       Int      @default(1)
+  price          Float    @default(0)
+  pickupLocation String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  resale      Resale      @relation(fields: [resaleId], references: [id], onDelete: Cascade)
+  laptopModel LaptopModel @relation(fields: [laptopModelId], references: [id], onDelete: Cascade)
+
+  @@unique([resaleId, laptopModelId])
+  @@index([resaleId])
+}
+
+model LaptopUnit {
+  id               String   @id @default(cuid())
+  laptopModelId    String
+  serialNumber     String?  @unique
+  assetNumber      String?
+  condition        String?
+  status           String   @default("AVAILABLE")
+  // AVAILABLE | RESERVED | ASSIGNED | WAITING_PICKUP | HANDED_OVER | RETURNED | REMOVED | UNAVAILABLE
+  assignedResaleId String?
+  assignedUserId    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  laptopModel     LaptopModel        @relation(fields: [laptopModelId], references: [id], onDelete: Cascade)
+  assignedResale  Resale?            @relation(fields: [assignedResaleId], references: [id])
+  assignedUser    User?              @relation(fields: [assignedUserId], references: [id])
+  winnerAssignment WinnerAssignment?
+  handover        HandoverRecord?
+
+  @@index([status])
+  @@index([laptopModelId])
+}
+
+model Registration {
+  id                   String    @id @default(cuid())
+  resaleId             String
+  userId               String
+  selectedLaptopModelId String?
+  status               String    @default("SUBMITTED")
+  // SUBMITTED | CANCELLED | EXCLUDED | WINNER | WAITING_LIST | NOT_SELECTED | COMPLETED
+  eligibilityStatus    String    @default("ELIGIBLE") // ELIGIBLE | INELIGIBLE | OVERRIDDEN | REVIEW
+  eligibilityReason    String?
+  eligibilityOverride  Boolean   @default(false)
+  overrideReason       String?
+  overrideBy           String?
+  termsAccepted        Boolean   @default(false)
+  termsVersion         String?
+  typedFullName        String?
+  ipAddress            String?
+  userAgent            String?
+  preferenceRank       Int       @default(1)
+  multiChoiceAck       Boolean   @default(false)
+  submittedAt          DateTime?
+  cancelledAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  resale        Resale                    @relation(fields: [resaleId], references: [id], onDelete: Cascade)
+  user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  declarations  RegistrationDeclaration[]
+  modelChoices  RegistrationModelChoice[]
+  results       ResaleResult[]
+  handover      HandoverRecord?
+  participation ParticipationHistory[]
+  notifications Notification[]
+
+  @@unique([resaleId, userId])
+  @@index([resaleId])
+  @@index([userId])
+  @@index([status])
+}
+
+model RegistrationModelChoice {
+  id             String   @id @default(cuid())
+  registrationId String
+  laptopModelId  String
+  priority       Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  laptopModel  LaptopModel  @relation(fields: [laptopModelId], references: [id], onDelete: Cascade)
+
+  @@unique([registrationId, laptopModelId])
+  @@index([registrationId])
+  @@index([laptopModelId])
+}
+
+model RegistrationDeclaration {
+  id                 String   @id @default(cuid())
+  registrationId     String
+  declarationKey     String
+  declarationText    String
+  declarationVersion String
+  accepted           Boolean  @default(false)
+  acceptedAt         DateTime?
+
+  registration Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@index([registrationId])
+}
+
+model ResaleResult {
+  id                  String    @id @default(cuid())
+  resaleId            String
+  registrationId      String
+  laptopModelId       String
+  resultType          String // WINNER | WAITING_LIST | NOT_SELECTED | EXCLUDED
+  resultOrder         Int       @default(0)
+  randomSeedReference String?
+  resaleRunId         String?
+  createdAt           DateTime  @default(now())
+  publishedAt         DateTime?
+
+  resale       Resale            @relation(fields: [resaleId], references: [id], onDelete: Cascade)
+  registration Registration      @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  laptopModel  LaptopModel       @relation(fields: [laptopModelId], references: [id], onDelete: Cascade)
+  assignment   WinnerAssignment?
+
+  @@index([resaleId])
+  @@index([resultType])
+  @@index([resaleRunId])
+}
+
+model WinnerAssignment {
+  id                    String    @id @default(cuid())
+  resaleResultId        String    @unique
+  laptopUnitId          String?   @unique
+  status                String    @default("PENDING")
+  // PENDING | ACCEPTED | DECLINED | NO_RESPONSE | INELIGIBLE | CANCELLED | REPLACED
+  responseDeadline      DateTime?
+  respondedAt           DateTime?
+  replacementFromResultId String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  resaleResult ResaleResult @relation(fields: [resaleResultId], references: [id], onDelete: Cascade)
+  laptopUnit    LaptopUnit?   @relation(fields: [laptopUnitId], references: [id])
+
+  @@index([status])
+}
+
+model HandoverRecord {
+  id                      String    @id @default(cuid())
+  registrationId          String    @unique
+  userId                  String
+  resaleId                String
+  laptopModelId           String
+  laptopUnitId            String?   @unique
+  serialNumber            String?
+  assetNumber             String?
+  price                   Float?
+  pickupLocation          String?
+  payrollDeductionConfirmed Boolean @default(false)
+  employeeConfirmation     Boolean  @default(false)
+  employeeTypedName        String?
+  idNumber                 String?
+  signatureData            String? // base64 PNG data URL of the drawn signature
+  agreementVersion         String?
+  agreementText            String? // snapshot of the exact agreement the employee signed
+  agreementPdf             Bytes?  // rendered signed-agreement PDF, generated at completion
+  employeeConfirmedAt      DateTime?
+  administratorConfirmation Boolean @default(false)
+  administratorId          String?
+  administratorConfirmedAt DateTime?
+  reviewedFormId           String?
+  notes                    String?
+  claimedAt                DateTime? // employee accepted the win (pre-signature)
+  completedAt              DateTime?
+  declinedAt               DateTime?
+  declineReason            String?
+  declineAcknowledgedAt    DateTime? // employee accepted the admin's decline
+  appealSubmittedAt        DateTime? // employee appealed the admin's decline
+  appealText               String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  registration  Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  user          User         @relation("HandoverEmployee", fields: [userId], references: [id])
+  administrator User?        @relation("HandoverAdmin", fields: [administratorId], references: [id])
+  resale        Resale       @relation(fields: [resaleId], references: [id], onDelete: Cascade)
+  laptopModel   LaptopModel  @relation(fields: [laptopModelId], references: [id])
+  laptopUnit    LaptopUnit?  @relation(fields: [laptopUnitId], references: [id])
+
+  @@index([resaleId])
+  @@index([userId])
+}
+
+model UploadedForm {
+  id               String   @id @default(cuid())
+  resaleId         String?
+  formType         String // RegistrationTerms | HandoverForm | SupportingDocument
+  originalFilename String
+  fileData         Bytes // file contents, stored in the DB (no shared disk needed)
+  mimeType         String
+  fileSize         Int      @default(0)
+  version          Int      @default(1)
+  isActive         Boolean  @default(true)
+  uploadedBy       String?
+  uploadedAt       DateTime @default(now())
+
+  resale Resale? @relation(fields: [resaleId], references: [id], onDelete: Cascade)
+
+  @@index([resaleId])
+  @@index([formType])
+}
+
+model Notification {
+  id             String    @id @default(cuid())
+  userId         String
+  resaleId       String?
+  registrationId String?
+  type           String
+  title          String
+  message        String
+  actionUrl      String?
+  isRead         Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  readAt         DateTime?
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resale       Resale?       @relation(fields: [resaleId], references: [id])
+  registration Registration? @relation(fields: [registrationId], references: [id])
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model ParticipationHistory {
+  id                  String    @id @default(cuid())
+  userId              String
+  resaleId            String
+  registrationId      String?
+  participationDate   DateTime  @default(now())
+  winner              Boolean   @default(false)
+  purchaseCompleted   Boolean   @default(false)
+  handoverCompletedAt DateTime?
+  nextEligibleAt      DateTime?
+  createdAt           DateTime  @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resale       Resale        @relation(fields: [resaleId], references: [id], onDelete: Cascade)
+  registration Registration? @relation(fields: [registrationId], references: [id])
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  userId        String?
+  role          String?
+  action        String
+  entityType    String
+  entityId      String?
+  previousValue String?
+  newValue      String?
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([entityType])
+  @@index([action])
+}
